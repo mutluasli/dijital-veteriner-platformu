@@ -24,6 +24,13 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         database.h database.cpp
+        owner.h owner.cpp
+        pet.h pet.cpp
+        vet.h vet.cpp
+        appointment.h appointment.cpp
+        vaccine.h vaccine.cpp
+        treatment.h treatment.cpp
+        chroniccondition.h chroniccondition.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET DijitalVeterinerPlatformu APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
