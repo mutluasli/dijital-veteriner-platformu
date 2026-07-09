@@ -75,7 +75,10 @@ bool DataBase::initialize()
                "hastalik_adi TEXT NOT NULL, "
                "notlar TEXT, "
                "kontrol_sikligi TEXT, "
+               "son_kontrol_tarihi DATE, "
                "FOREIGN KEY (pet_id) REFERENCES Pet(id))");
+
+    query.exec("ALTER TABLE ChronicCondition ADD COLUMN son_kontrol_tarihi DATE");
 
     qDebug() << "Veritabani hazir:" << dbPath;
     return true;

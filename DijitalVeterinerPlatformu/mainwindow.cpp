@@ -7,6 +7,8 @@
 #include "vaccine.h"
 #include <QMessageBox>
 #include <QDate>
+#include "treatment.h"
+#include "chroniccondition.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -51,6 +53,25 @@ MainWindow::MainWindow(QWidget *parent)
     refreshVaccineList();
 
     refreshReminders();
+
+    // Tedavi icin hayvan combo box'ini doldur
+    QList<pet> petsForTreatment = pet::getAll();
+    for (const pet &p : petsForTreatment) {
+        ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
+    }
+
+    // Tedavi listesini doldur
+    QList<treatment> treatments = treatment::getAll();
+    for (const treatment &t : treatments) {
+        ui->listWidgetTedaviler->addItem(t.tani + " - " + t.ilac + " (" + t.baslangic_tarihi.toString("dd.MM.yyyy") + " - " + t.bitis_tarihi.toString("dd.MM.yyyy") + ")");
+    }
+    // Kronik durum icin hayvan combo box'ini doldur
+    QList<pet> petsForChronic = pet::getAll();
+    for (const pet &p : petsForChronic) {
+        ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
+    }
+
+    refreshChronicList();
 
 }
 
@@ -206,6 +227,33 @@ void MainWindow::on_btnHayvanEkle_clicked()
             }
         }
 
+        void MainWindow::refreshChronicList()
+        {
+            ui->listWidgetKronikDurumlar->clear();
+            QDate today = QDate::currentDate();
+
+            QList<chroniccondition> conditions = chroniccondition::getAll();
+            for (const chroniccondition &c : conditions) {
+                int siklikGun = c.kontrol_sikligi.toInt();
+                QDate sonrakiKontrol = c.son_kontrol_tarihi.addDays(siklikGun);
+                int daysLeft = today.daysTo(sonrakiKontrol);
+
+                QString itemText = c.hastalik_adi + " - Sonraki kontrol: " + sonrakiKontrol.toString("dd.MM.yyyy");
+                QListWidgetItem *item = new QListWidgetItem(itemText);
+
+                if (daysLeft < 0) {
+                    item->setForeground(Qt::red);
+                    item->setText(itemText + " (GECIKTI!)");
+                } else if (daysLeft <= 7) {
+                    item->setForeground(QColor(255, 140, 0));
+                    item->setText(itemText + " (YAKLASIYOR)");
+                }
+
+                ui->listWidgetKronikDurumlar->addItem(item);
+            }
+        }
+
+
     void MainWindow::on_btnAsiProgramiOlustur_clicked()
         {
             if (ui->comboBoxAsiHayvan->count() == 0) {
@@ -256,3 +304,57 @@ void MainWindow::on_btnHayvanEkle_clicked()
             QMessageBox::information(this, "Basarili", secilenHayvan.ad + " icin asi programi olusturuldu.");
             refreshVaccineList();
         }
+
+
+        void MainWindow::on_btnTedaviEkle_clicked()
+        {
+            if (ui->comboBoxTedaviHayvan->count() == 0) {
+                return;
+            }
+
+            int petId = ui->comboBoxTedaviHayvan->currentData().toInt();
+            QString tani = ui->lineEditTani->text();
+            QString ilac = ui->lineEditIlac->text();
+            QDate baslangic = ui->dateEditBaslangic->date();
+            QDate bitis = ui->dateEditBitis->date();
+
+            if (tani.isEmpty()) {
+                return;
+            }
+
+            treatment::add(petId, tani, ilac, baslangic, bitis);
+
+            ui->lineEditTani->clear();
+            ui->lineEditIlac->clear();
+
+            ui->listWidgetTedaviler->clear();
+            QList<treatment> treatments = treatment::getAll();
+            for (const treatment &t : treatments) {
+                ui->listWidgetTedaviler->addItem(t.tani + " - " + t.ilac + " (" + t.baslangic_tarihi.toString("dd.MM.yyyy") + " - " + t.bitis_tarihi.toString("dd.MM.yyyy") + ")");
+            }
+        }
+
+        void MainWindow::on_btnKronikEkle_clicked()
+        {
+            if (ui->comboBoxKronikHayvan->count() == 0) {
+                return;
+            }
+
+            int petId = ui->comboBoxKronikHayvan->currentData().toInt();
+            QString hastalikAdi = ui->lineEditHastalikAdi->text();
+            QString notlar = ui->lineEditNotlar->text();
+            int siklikGun = ui->spinBoxKontrolSikligi->value();
+            QDate sonKontrol = ui->dateEditSonKontrol->date();
+
+            if (hastalikAdi.isEmpty()) {
+                return;
+            }
+
+            chroniccondition::add(petId, hastalikAdi, notlar, QString::number(siklikGun), sonKontrol);
+
+            ui->lineEditHastalikAdi->clear();
+            ui->lineEditNotlar->clear();
+
+            refreshChronicList();
+        }
+

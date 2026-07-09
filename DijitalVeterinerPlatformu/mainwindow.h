@@ -36,8 +36,13 @@ private slots:
 
     void refreshReminders();
 
+    void on_btnTedaviEkle_clicked();
+
+    void on_btnKronikEkle_clicked();
+
 private:
     Ui::MainWindow *ui;
     void refreshVaccineList();
+    void refreshChronicList();
 };
 #endif // MAINWINDOW_H
