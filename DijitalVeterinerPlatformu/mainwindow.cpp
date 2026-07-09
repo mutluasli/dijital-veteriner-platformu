@@ -3,6 +3,8 @@
 #include "owner.h"
 #include "pet.h"
 #include "appointment.h"
+#include "vaccine.h"
+#include <QDate>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -35,6 +37,30 @@ MainWindow::MainWindow(QWidget *parent)
         ui->listWidgetRandevu->addItem(
             a.tarih_saat.toString("dd.MM.yyyy hh:mm") + " - " + a.durum
             );
+    }
+    // Asi icin hayvan combo box'ini doldur
+    QList<pet> petsForVaccine = pet::getAll();
+    for (const pet &p : petsForVaccine) {
+        ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
+    }
+
+    // Asi listesini doldur (hatirlatma renkleriyle)
+    QList<vaccine> vaccines = vaccine::getAll();
+    QDate today = QDate::currentDate();
+    for (const vaccine &v : vaccines) {
+        QString itemText = v.asi_adi + " - Sonraki: " + v.sonraki_tarih.toString("dd.MM.yyyy");
+        QListWidgetItem *item = new QListWidgetItem(itemText);
+
+        int daysLeft = today.daysTo(v.sonraki_tarih);
+        if (daysLeft < 0) {
+            item->setForeground(Qt::red);
+            item->setText(itemText + " (GECIKTI!)");
+        } else if (daysLeft <= 7) {
+            item->setForeground(QColor(255, 140, 0));
+            item->setText(itemText + " (YAKLASIYOR)");
+        }
+
+        ui->listWidgetAsilar->addItem(item);
     }
 
 }
@@ -117,3 +143,44 @@ void MainWindow::on_btnHayvanEkle_clicked()
     }
 
 
+
+
+        void MainWindow::on_btnAsiEkle_clicked()
+        {
+            if (ui->comboBoxAsiHayvan->count() == 0) {
+                return;
+            }
+
+            int petId = ui->comboBoxAsiHayvan->currentData().toInt();
+            QString asiAdi = ui->lineEditAsiAdi->text();
+            QDate yapilisTarihi = ui->dateEditYapilis->date();
+            QDate sonrakiTarih = ui->dateEditSonraki->date();
+
+            if (asiAdi.isEmpty()) {
+                return;
+            }
+
+            vaccine::add(petId, asiAdi, yapilisTarihi, sonrakiTarih);
+
+            ui->lineEditAsiAdi->clear();
+
+            ui->listWidgetAsilar->clear();
+            QList<vaccine> vaccines = vaccine::getAll();
+            QDate today = QDate::currentDate();
+            for (const vaccine &v : vaccines) {
+                QString itemText = v.asi_adi + " - Sonraki: " + v.sonraki_tarih.toString("dd.MM.yyyy");
+                QListWidgetItem *item = new QListWidgetItem(itemText);
+
+                int daysLeft = today.daysTo(v.sonraki_tarih);
+                if (daysLeft < 0) {
+                    item->setForeground(Qt::red);
+                    item->setText(itemText + " (GECIKTI!)");
+                } else if (daysLeft <= 7) {
+                    item->setForeground(QColor(255, 140, 0));
+                    item->setText(itemText + " (YAKLASIYOR)");
+                }
+
+                ui->listWidgetAsilar->addItem(item);
+            }
+
+        }

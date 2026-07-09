@@ -3,6 +3,7 @@
 #include "pet.h"
 #include "appointment.h"
 #include <QMainWindow>
+#include "vaccine.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -24,6 +25,8 @@ private slots:
     void on_btnHayvanEkle_clicked();
 
     void on_btnRandevuEkle_clicked();
+
+    void on_btnAsiEkle_clicked();
 
 private:
     Ui::MainWindow *ui;
