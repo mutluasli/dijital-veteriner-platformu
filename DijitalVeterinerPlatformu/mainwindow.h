@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include "pet.h"
+#include "appointment.h"
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
@@ -21,6 +22,8 @@ private slots:
     void on_btnSahipEkle_clicked();
 
     void on_btnHayvanEkle_clicked();
+
+    void on_btnRandevuEkle_clicked();
 
 private:
     Ui::MainWindow *ui;

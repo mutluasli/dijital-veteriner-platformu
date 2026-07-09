@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 #include "owner.h"
 #include "pet.h"
+#include "appointment.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -21,6 +22,19 @@ MainWindow::MainWindow(QWidget *parent)
     QList<pet> pets = pet::getAll();
     for (const pet &p : pets) {
         ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
+    }
+    // Randevu icin hayvan combo box'ini doldur
+    QList<pet> allPets = pet::getAll();
+    for (const pet &p : allPets) {
+        ui->comboBoxHayvan->addItem(p.ad, p.id);
+    }
+
+    // Randevu listesini doldur
+    QList<appointment> appointments = appointment::getAll();
+    for (const appointment &a : appointments) {
+        ui->listWidgetRandevu->addItem(
+            a.tarih_saat.toString("dd.MM.yyyy hh:mm") + " - " + a.durum
+            );
     }
 
 }
@@ -79,4 +93,27 @@ void MainWindow::on_btnHayvanEkle_clicked()
         ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
     }
 }
+
+
+
+    void MainWindow::on_btnRandevuEkle_clicked()
+    {
+        if (ui->comboBoxHayvan->count() == 0) {
+            return;
+        }
+
+        int petId = ui->comboBoxHayvan->currentData().toInt();
+        QDateTime tarihSaat = ui->dateTimeEditRandevu->dateTime();
+
+        appointment::add(petId, 0, tarihSaat, "bekliyor");
+
+        ui->listWidgetRandevu->clear();
+        QList<appointment> appointments = appointment::getAll();
+        for (const appointment &a : appointments) {
+            ui->listWidgetRandevu->addItem(
+                a.tarih_saat.toString("dd.MM.yyyy hh:mm") + " - " + a.durum
+                );
+        }
+    }
+
 
