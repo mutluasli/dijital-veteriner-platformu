@@ -5,6 +5,8 @@
 #include <QDate>
 #include <QList>
 
+
+
 class pet
 {
 public:
@@ -20,6 +22,7 @@ public:
     static QList<pet> getByOwner(int owner_id);
     static bool remove(int id);
     static bool update(int id, const QString &ad, const QString &tur, const QString &irk, const QDate &dogum_tarihi);
+    static pet getById(int id);
 };
 
 #endif // PET_H

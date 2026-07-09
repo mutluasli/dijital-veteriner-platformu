@@ -84,3 +84,22 @@ bool pet::update(int id, const QString &ad, const QString &tur, const QString &i
     }
     return true;
 }
+
+
+pet pet::getById(int id)
+{
+    pet p;
+    QSqlQuery query;
+    query.prepare("SELECT id, owner_id, ad, tur, irk, dogum_tarihi FROM Pet WHERE id = :id");
+    query.bindValue(":id", id);
+    query.exec();
+    if (query.next()) {
+        p.id = query.value("id").toInt();
+        p.owner_id = query.value("owner_id").toInt();
+        p.ad = query.value("ad").toString();
+        p.tur = query.value("tur").toString();
+        p.irk = query.value("irk").toString();
+        p.dogum_tarihi = query.value("dogum_tarihi").toDate();
+    }
+    return p;
+}
