@@ -73,6 +73,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     refreshChronicList();
 
+    // Beslenme icin hayvan combo box'ini doldur
+    QList<pet> petsForNutrition = pet::getAll();
+    for (const pet &p : petsForNutrition) {
+        ui->comboBoxBeslenmeHayvan->addItem(p.ad, p.id);
+    }
+
 }
 
 MainWindow::~MainWindow()
@@ -356,5 +362,64 @@ void MainWindow::on_btnHayvanEkle_clicked()
             ui->lineEditNotlar->clear();
 
             refreshChronicList();
+        }
+
+
+        void MainWindow::on_btnBeslenmeGetir_clicked()
+        {
+            if (ui->comboBoxBeslenmeHayvan->count() == 0) {
+                return;
+            }
+
+            int petId = ui->comboBoxBeslenmeHayvan->currentData().toInt();
+            pet secilenHayvan = pet::getById(petId);
+            QDate today = QDate::currentDate();
+
+            int ayFarki = secilenHayvan.dogum_tarihi.daysTo(today) / 30;
+            QString tur = secilenHayvan.tur.toLower();
+            bool kedi = tur.contains("kedi");
+            bool kopek = tur.contains("kopek") || tur.contains("köpek");
+
+            QString yasGrubu;
+            if (ayFarki < 12) {
+                yasGrubu = "yavru";
+            } else if (ayFarki < 84) {
+                yasGrubu = "erişkin";
+            } else {
+                yasGrubu = "senior";
+            }
+
+            QString oneri;
+
+            if (kedi && yasGrubu == "yavru") {
+                oneri = "Yuksek proteinli, yavru kedi mamasi onerilir. Gunde 3-4 ogune bolunmus beslenme. Buyume donemi oldugu icin kalsiyum ve DHA icerigi zengin mamalar tercih edilmeli.";
+            } else if (kedi && yasGrubu == "erişkin") {
+                oneri = "Dengeli erişkin kedi mamasi, gunde 2 ogun. Kilo takibi yapilmali, asiri kilo alimindan kacinilmali.";
+            } else if (kedi && yasGrubu == "senior") {
+                oneri = "Sindirimi kolay, dusuk kalorili senior kedi mamasi onerilir. Bobrek sagligini destekleyen icerikler tercih edilmeli. Gunde 2-3 kucuk ogun.";
+            } else if (kopek && yasGrubu == "yavru") {
+                oneri = "Yuksek proteinli, yavru kopek mamasi onerilir. Gunde 3-4 ogune bolunmus beslenme. Irk buyuklugune uygun mama secilmeli (kucuk/orta/buyuk irk formulleri farklidir).";
+            } else if (kopek && yasGrubu == "erişkin") {
+                oneri = "Dengeli erişkin kopek mamasi, gunde 2 ogun. Aktivite seviyesine gore kalori ayari yapilmali.";
+            } else if (kopek && yasGrubu == "senior") {
+                oneri = "Eklem sagligini destekleyen (glukozamin icerikli), dusuk kalorili senior kopek mamasi onerilir. Gunde 2 ogun, kilo kontrolu onemli.";
+            } else {
+                oneri = "Bu tur icin beslenme onerisi tanimli degil.";
+            }
+
+            // Kronik durum varsa ek uyari ekle
+            QList<chroniccondition> conditions = chroniccondition::getByPet(petId);
+            if (!conditions.isEmpty()) {
+                oneri += "\n\nDikkat: Bu hayvanin kronik saglik durumu var (";
+                for (int i = 0; i < conditions.size(); ++i) {
+                    oneri += conditions[i].hastalik_adi;
+                    if (i < conditions.size() - 1) {
+                        oneri += ", ";
+                    }
+                }
+                oneri += "). Beslenme programi veteriner kontrolunde ozellestirilmelidir.";
+            }
+
+            ui->labelBeslenmeOnerisi->setText(oneri);
         }
 

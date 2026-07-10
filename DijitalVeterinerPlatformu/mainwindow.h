@@ -40,6 +40,8 @@ private slots:
 
     void on_btnKronikEkle_clicked();
 
+    void on_btnBeslenmeGetir_clicked();
+
 private:
     Ui::MainWindow *ui;
     void refreshVaccineList();
