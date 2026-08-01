@@ -42,6 +42,8 @@ private slots:
 
     void on_btnBeslenmeGetir_clicked();
 
+    void on_btnSahipSil_clicked();
+
 private:
     Ui::MainWindow *ui;
     void refreshVaccineList();

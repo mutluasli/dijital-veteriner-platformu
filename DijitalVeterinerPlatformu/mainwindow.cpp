@@ -17,8 +17,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     QList<owner> owners = owner::getAll();
     for (const owner &o : owners) {
-        ui->listWidgetSahipler->addItem(o.ad + " - " + o.telefon + " - " + o.email);
+        QListWidgetItem *item = new QListWidgetItem(o.ad + " - " + o.telefon + " - " + o.email);
+        item->setData(Qt::UserRole, o.id);
+       ui->listWidgetSahipler->addItem(item);
     }
+
     // Sahip combo box'ini doldur
     for (const owner &o : owners) {
         ui->comboBoxSahip->addItem(o.ad, o.id);
@@ -101,11 +104,12 @@ void MainWindow::on_btnSahipEkle_clicked()
     ui->lineEditAd->clear();
     ui->lineEditTelefon->clear();
     ui->lineEditEmail->clear();
-
     ui->listWidgetSahipler->clear();
     QList<owner> owners = owner::getAll();
     for (const owner &o : owners) {
-        ui->listWidgetSahipler->addItem(o.ad + " - " + o.telefon + " - " + o.email);
+        QListWidgetItem *item = new QListWidgetItem(o.ad + " - " + o.telefon + " - " + o.email);
+        item->setData(Qt::UserRole, o.id);
+        ui->listWidgetSahipler->addItem(item);
     }
 
 }
@@ -422,4 +426,33 @@ void MainWindow::on_btnHayvanEkle_clicked()
 
             ui->labelBeslenmeOnerisi->setText(oneri);
         }
+
+
+        void MainWindow::on_btnSahipSil_clicked()
+        {
+            QListWidgetItem *secili = ui->listWidgetSahipler->currentItem();
+            if (!secili) {
+                QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz sahibi listeden secin.");
+                return;
+            }
+
+            int ownerId = secili->data(Qt::UserRole).toInt();
+
+            QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
+                                                                      "Bu sahibi silmek istediginize emin misiniz? Bagli hayvanlar da etkilenebilir.",
+                                                                      QMessageBox::Yes | QMessageBox::No);
+
+            if (cevap == QMessageBox::Yes) {
+                owner::remove(ownerId);
+
+                ui->listWidgetSahipler->clear();
+                QList<owner> owners = owner::getAll();
+                for (const owner &o : owners) {
+                    QListWidgetItem *item = new QListWidgetItem(o.ad + " - " + o.telefon + " - " + o.email);
+                    item->setData(Qt::UserRole, o.id);
+                    ui->listWidgetSahipler->addItem(item);
+                }
+            }
+        }
+
 
