@@ -62,3 +62,19 @@ bool owner::update(int id, const QString &ad, const QString &telefon, const QStr
     }
     return true;
 }
+
+owner owner::getById(int id)
+{
+    owner o;
+    QSqlQuery query;
+    query.prepare("SELECT id, ad, telefon, email FROM Owner WHERE id = :id");
+    query.bindValue(":id", id);
+    query.exec();
+    if (query.next()) {
+        o.id = query.value("id").toInt();
+        o.ad = query.value("ad").toString();
+        o.telefon = query.value("telefon").toString();
+        o.email = query.value("email").toString();
+    }
+    return o;
+}

@@ -15,6 +15,7 @@ public:
     static QList<owner> getAll();
     static bool remove (int id);
     static bool update(int id, const QString &ad,const QString &telefon,const QString &email);
+    static owner getById(int id);
 };
 
 #endif // OWNER_H

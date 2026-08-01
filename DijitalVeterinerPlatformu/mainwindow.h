@@ -47,7 +47,18 @@ private slots:
     void on_btnHayvanSil_clicked();
 
 
+    void on_btnRandevuSil_clicked();
+
+    void on_btnAsiSil_clicked();
+
+    void on_btnTedaviSil_clicked();
+
+    void on_btnKronikSil_clicked();
+
+
 private:
+    QString petComboLabel(const pet &p);
+    QString petFullLabel(const pet &p);
     Ui::MainWindow *ui;
     void refreshVaccineList();
     void refreshChronicList();

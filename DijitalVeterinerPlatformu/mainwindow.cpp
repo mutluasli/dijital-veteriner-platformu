@@ -27,15 +27,19 @@ MainWindow::MainWindow(QWidget *parent)
         ui->comboBoxSahip->addItem(o.ad, o.id);
     }
 
+
     // Hayvan listesini doldur
     QList<pet> pets = pet::getAll();
     for (const pet &p : pets) {
-        ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
+        QListWidgetItem *item = new QListWidgetItem(petFullLabel(p) + " - Tur: " + p.tur + " - Dogum: " + p.dogum_tarihi.toString("dd.MM.yyyy"));
+        item->setData(Qt::UserRole, p.id);
+        ui->listWidgetHayvanlar->addItem(item);
     }
+
     // Randevu icin hayvan combo box'ini doldur
     QList<pet> allPets = pet::getAll();
     for (const pet &p : allPets) {
-        ui->comboBoxHayvan->addItem(p.ad, p.id);
+    ui->comboBoxHayvan->addItem(petComboLabel(p), p.id);
     }
 
     // Randevu listesini doldur
@@ -49,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Asi icin hayvan combo box'ini doldur
     QList<pet> petsForVaccine = pet::getAll();
     for (const pet &p : petsForVaccine) {
-        ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
+        ui->comboBoxAsiHayvan->addItem(petComboLabel(p), p.id);
     }
 
     // Asi listesini doldur
@@ -60,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Tedavi icin hayvan combo box'ini doldur
     QList<pet> petsForTreatment = pet::getAll();
     for (const pet &p : petsForTreatment) {
-        ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
+        ui->comboBoxTedaviHayvan->addItem(petComboLabel(p), p.id);
     }
 
     // Tedavi listesini doldur
@@ -71,7 +75,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Kronik durum icin hayvan combo box'ini doldur
     QList<pet> petsForChronic = pet::getAll();
     for (const pet &p : petsForChronic) {
-        ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
+       ui->comboBoxKronikHayvan->addItem(petComboLabel(p), p.id);
     }
 
     refreshChronicList();
@@ -79,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Beslenme icin hayvan combo box'ini doldur
     QList<pet> petsForNutrition = pet::getAll();
     for (const pet &p : petsForNutrition) {
-        ui->comboBoxBeslenmeHayvan->addItem(p.ad, p.id);
+        ui->comboBoxBeslenmeHayvan->addItem(petComboLabel(p), p.id);
     }
 
 }
@@ -88,6 +92,20 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+
+QString MainWindow::petComboLabel(const pet &p)
+{
+    owner sahibi = owner::getById(p.owner_id);
+    return p.ad + " (" + sahibi.ad + ")";
+}
+
+QString MainWindow::petFullLabel(const pet &p)
+{
+    owner sahibi = owner::getById(p.owner_id);
+    return p.ad + " - Sahip: " + sahibi.ad + " - Irk: " + p.irk;
+}
+
 
 void MainWindow::on_btnSahipEkle_clicked()
 {
@@ -141,7 +159,9 @@ void MainWindow::on_btnHayvanEkle_clicked()
     ui->listWidgetHayvanlar->clear();
     QList<pet> pets = pet::getAll();
     for (const pet &p : pets) {
-        QListWidgetItem *item = new QListWidgetItem(p.ad + " (" + p.tur + ")");
+        owner sahibi = owner::getById(p.owner_id);
+        QString satir = p.ad + " - Sahip: " + sahibi.ad + " - Tür: " + p.tur + " - Irk: " + p.irk + " - Doğum: " + p.dogum_tarihi.toString("dd.MM.yyyy");
+        QListWidgetItem *item = new QListWidgetItem(satir);
         item->setData(Qt::UserRole, p.id);
         ui->listWidgetHayvanlar->addItem(item);
     }
@@ -153,7 +173,7 @@ void MainWindow::on_btnHayvanEkle_clicked()
     ui->comboBoxKronikHayvan->clear();
     ui->comboBoxBeslenmeHayvan->clear();
     for (const pet &p : pets) {
-        ui->comboBoxHayvan->addItem(p.ad, p.id);
+       ui->comboBoxHayvan->addItem(petComboLabel(p), p.id);
         ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
         ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
         ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
@@ -161,26 +181,27 @@ void MainWindow::on_btnHayvanEkle_clicked()
     }
 }
 
-
-    void MainWindow::on_btnRandevuEkle_clicked()
-    {
-        if (ui->comboBoxHayvan->count() == 0) {
-            return;
-        }
-
-        int petId = ui->comboBoxHayvan->currentData().toInt();
-        QDateTime tarihSaat = ui->dateTimeEditRandevu->dateTime();
-
-        appointment::add(petId, 0, tarihSaat, "bekliyor");
-
-        ui->listWidgetRandevu->clear();
-        QList<appointment> appointments = appointment::getAll();
-        for (const appointment &a : appointments) {
-            ui->listWidgetRandevu->addItem(
-                a.tarih_saat.toString("dd.MM.yyyy hh:mm") + " - " + a.durum
-                );
-        }
+void MainWindow::on_btnRandevuEkle_clicked()
+{
+    if (ui->comboBoxHayvan->count() == 0) {
+        return;
     }
+
+    int petId = ui->comboBoxHayvan->currentData().toInt();
+    QDateTime tarihSaat = ui->dateTimeEditRandevu->dateTime();
+
+    appointment::add(petId, 0, tarihSaat, "bekliyor");
+
+    ui->listWidgetRandevu->clear();
+    QList<appointment> appointments = appointment::getAll();
+    for (const appointment &a : appointments) {
+        pet ilgiliHayvan = pet::getById(a.pet_id);
+        QString satir = petFullLabel(ilgiliHayvan) + " - " + a.tarih_saat.toString("dd.MM.yyyy hh:mm") + " - " + a.durum;
+        QListWidgetItem *item = new QListWidgetItem(satir);
+        item->setData(Qt::UserRole, a.id);
+        ui->listWidgetRandevu->addItem(item);
+    }
+}
 
     void MainWindow::on_btnAsiEkle_clicked()
     {
@@ -191,10 +212,17 @@ void MainWindow::on_btnHayvanEkle_clicked()
         int petId = ui->comboBoxAsiHayvan->currentData().toInt();
         QString asiAdi = ui->lineEditAsiAdi->text();
         QDate yapilisTarihi = ui->dateEditYapilis->date();
-        QDate sonrakiTarih = ui->dateEditSonraki->date();
 
         if (asiAdi.isEmpty()) {
             return;
+        }
+
+        QDate sonrakiTarih;
+        QString asiAdiKucuk = asiAdi.toLower();
+        if (asiAdiKucuk.contains("parazit")) {
+            sonrakiTarih = yapilisTarihi.addDays(60);
+        } else {
+            sonrakiTarih = yapilisTarihi.addYears(1);
         }
 
         vaccine::add(petId, asiAdi, yapilisTarihi, sonrakiTarih);
@@ -202,28 +230,31 @@ void MainWindow::on_btnHayvanEkle_clicked()
         ui->lineEditAsiAdi->clear();
 
         refreshVaccineList();
+        refreshReminders();
     }
 
     void MainWindow::refreshVaccineList()
-        {
-            ui->listWidgetAsilar->clear();
-            QList<vaccine> vaccines = vaccine::getAll();
-            QDate today = QDate::currentDate();
-            for (const vaccine &v : vaccines) {
-                QString itemText = v.asi_adi + " - Sonraki: " + v.sonraki_tarih.toString("dd.MM.yyyy");
-                QListWidgetItem *item = new QListWidgetItem(itemText);
+    {
+        ui->listWidgetAsilar->clear();
+        QList<vaccine> vaccines = vaccine::getAll();
+        QDate today = QDate::currentDate();
+        for (const vaccine &v : vaccines) {
+            pet ilgiliHayvan = pet::getById(v.pet_id);
+            QString itemText = petFullLabel(ilgiliHayvan) + " - " + v.asi_adi + " - Sonraki: " + v.sonraki_tarih.toString("dd.MM.yyyy");
+            QListWidgetItem *item = new QListWidgetItem(itemText);
+            item->setData(Qt::UserRole, v.id);
 
-                int daysLeft = today.daysTo(v.sonraki_tarih);
-                if (daysLeft < 0) {
-                    item->setForeground(Qt::red);
-                    item->setText(itemText + " (GECIKTI!)");
-                } else if (daysLeft <= 7) {
-                    item->setForeground(QColor(255, 140, 0));
-                    item->setText(itemText + " (YAKLASIYOR)");
-                }
-                ui->listWidgetAsilar->addItem(item);
+            int daysLeft = today.daysTo(v.sonraki_tarih);
+            if (daysLeft < 0) {
+                item->setForeground(Qt::red);
+                item->setText(itemText + " (GECIKTI!)");
+            } else if (daysLeft <= 7) {
+                item->setForeground(QColor(255, 140, 0));
+                item->setText(itemText + " (YAKLASIYOR)");
             }
+            ui->listWidgetAsilar->addItem(item);
         }
+    }
 
         void MainWindow::refreshReminders()
         {
@@ -264,12 +295,14 @@ void MainWindow::on_btnHayvanEkle_clicked()
 
             QList<chroniccondition> conditions = chroniccondition::getAll();
             for (const chroniccondition &c : conditions) {
+                pet ilgiliHayvan = pet::getById(c.pet_id);
                 int siklikGun = c.kontrol_sikligi.toInt();
                 QDate sonrakiKontrol = c.son_kontrol_tarihi.addDays(siklikGun);
                 int daysLeft = today.daysTo(sonrakiKontrol);
 
-                QString itemText = c.hastalik_adi + " - Sonraki kontrol: " + sonrakiKontrol.toString("dd.MM.yyyy");
+                QString itemText = petFullLabel(ilgiliHayvan) + " - " + c.hastalik_adi + " - Sonraki kontrol: " + sonrakiKontrol.toString("dd.MM.yyyy");
                 QListWidgetItem *item = new QListWidgetItem(itemText);
+                item->setData(Qt::UserRole, c.id);
 
                 if (daysLeft < 0) {
                     item->setForeground(Qt::red);
@@ -278,11 +311,9 @@ void MainWindow::on_btnHayvanEkle_clicked()
                     item->setForeground(QColor(255, 140, 0));
                     item->setText(itemText + " (YAKLASIYOR)");
                 }
-
                 ui->listWidgetKronikDurumlar->addItem(item);
             }
         }
-
 
     void MainWindow::on_btnAsiProgramiOlustur_clicked()
         {
@@ -360,7 +391,11 @@ void MainWindow::on_btnHayvanEkle_clicked()
             ui->listWidgetTedaviler->clear();
             QList<treatment> treatments = treatment::getAll();
             for (const treatment &t : treatments) {
-                ui->listWidgetTedaviler->addItem(t.tani + " - " + t.ilac + " (" + t.baslangic_tarihi.toString("dd.MM.yyyy") + " - " + t.bitis_tarihi.toString("dd.MM.yyyy") + ")");
+                pet ilgiliHayvan = pet::getById(t.pet_id);
+                QString satir = petFullLabel(ilgiliHayvan) + " - " + t.tani + " - " + t.ilac + " (" + t.baslangic_tarihi.toString("dd.MM.yyyy") + " - " + t.bitis_tarihi.toString("dd.MM.yyyy") + ")";
+                QListWidgetItem *item = new QListWidgetItem(satir);
+                item->setData(Qt::UserRole, t.id);
+                ui->listWidgetTedaviler->addItem(item);
             }
         }
 
@@ -510,7 +545,7 @@ void MainWindow::on_btnHayvanEkle_clicked()
                 ui->comboBoxBeslenmeHayvan->clear();
                 QList<pet> kalanHayvanlar = pet::getAll();
                 for (const pet &p : kalanHayvanlar) {
-                    ui->comboBoxHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxHayvan->addItem(petComboLabel(p), p.id);
                     ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
                     ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
                     ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
@@ -570,7 +605,9 @@ void MainWindow::on_btnHayvanEkle_clicked()
                 ui->listWidgetHayvanlar->clear();
                 QList<pet> pets = pet::getAll();
                 for (const pet &p : pets) {
-                    QListWidgetItem *item = new QListWidgetItem(p.ad + " (" + p.tur + ")");
+                    owner sahibi = owner::getById(p.owner_id);
+                    QString satir = p.ad + " - Sahip: " + sahibi.ad + " - Tür: " + p.tur + " - Irk: " + p.irk + " - Doğum: " + p.dogum_tarihi.toString("dd.MM.yyyy");
+                    QListWidgetItem *item = new QListWidgetItem(satir);
                     item->setData(Qt::UserRole, p.id);
                     ui->listWidgetHayvanlar->addItem(item);
                 }
@@ -581,7 +618,7 @@ void MainWindow::on_btnHayvanEkle_clicked()
                 ui->comboBoxKronikHayvan->clear();
                 ui->comboBoxBeslenmeHayvan->clear();
                 for (const pet &p : pets) {
-                    ui->comboBoxHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxHayvan->addItem(petComboLabel(p), p.id);
                     ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
                     ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
                     ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
@@ -593,4 +630,110 @@ void MainWindow::on_btnHayvanEkle_clicked()
                 refreshReminders();
             }
         }
+
+        void MainWindow::on_btnRandevuSil_clicked()
+        {
+            QList<QListWidgetItem*> secilenler = ui->listWidgetRandevu->selectedItems();
+            if (secilenler.isEmpty()) {
+                QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz randevuyu listeden secin.");
+                return;
+            }
+
+            int appointmentId = secilenler.first()->data(Qt::UserRole).toInt();
+
+            QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
+                                                                      "Bu randevuyu silmek istediginize emin misiniz?",
+                                                                      QMessageBox::Yes | QMessageBox::No);
+
+            if (cevap == QMessageBox::Yes) {
+                appointment::remove(appointmentId);
+
+                ui->listWidgetRandevu->clear();
+                QList<appointment> appointments = appointment::getAll();
+                for (const appointment &a : appointments) {
+                    pet ilgiliHayvan = pet::getById(a.pet_id);
+                    QString satir = petFullLabel(ilgiliHayvan) + " - " + a.tarih_saat.toString("dd.MM.yyyy hh:mm") + " - " + a.durum;
+                    QListWidgetItem *item = new QListWidgetItem(satir);
+                    item->setData(Qt::UserRole, a.id);
+                    ui->listWidgetRandevu->addItem(item);
+                }
+            }
+        }
+
+
+
+
+        void MainWindow::on_btnAsiSil_clicked()
+        {
+            QList<QListWidgetItem*> secilenler = ui->listWidgetAsilar->selectedItems();
+            if (secilenler.isEmpty()) {
+                QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz asiyi listeden secin.");
+                return;
+            }
+
+            int vaccineId = secilenler.first()->data(Qt::UserRole).toInt();
+
+            QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
+                                                                      "Bu asi kaydini silmek istediginize emin misiniz?",
+                                                                      QMessageBox::Yes | QMessageBox::No);
+
+            if (cevap == QMessageBox::Yes) {
+                vaccine::remove(vaccineId);
+                refreshVaccineList();
+                refreshReminders();
+            }
+        }
+
+
+        void MainWindow::on_btnTedaviSil_clicked()
+        {
+            QList<QListWidgetItem*> secilenler = ui->listWidgetTedaviler->selectedItems();
+            if (secilenler.isEmpty()) {
+                QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz tedaviyi listeden secin.");
+                return;
+            }
+
+            int treatmentId = secilenler.first()->data(Qt::UserRole).toInt();
+
+            QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
+                                                                      "Bu tedavi kaydini silmek istediginize emin misiniz?",
+                                                                      QMessageBox::Yes | QMessageBox::No);
+
+            if (cevap == QMessageBox::Yes) {
+                treatment::remove(treatmentId);
+
+                ui->listWidgetTedaviler->clear();
+                QList<treatment> treatments = treatment::getAll();
+                for (const treatment &t : treatments) {
+                    pet ilgiliHayvan = pet::getById(t.pet_id);
+                    QString satir = petFullLabel(ilgiliHayvan) + " - " + t.tani + " - " + t.ilac + " (" + t.baslangic_tarihi.toString("dd.MM.yyyy") + " - " + t.bitis_tarihi.toString("dd.MM.yyyy") + ")";
+                    QListWidgetItem *item = new QListWidgetItem(satir);
+                    item->setData(Qt::UserRole, t.id);
+                    ui->listWidgetTedaviler->addItem(item);
+                }
+            }
+        }
+
+
+
+        void MainWindow::on_btnKronikSil_clicked()
+        {
+            QList<QListWidgetItem*> secilenler = ui->listWidgetKronikDurumlar->selectedItems();
+            if (secilenler.isEmpty()) {
+                QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz kayidi listeden secin.");
+                return;
+            }
+
+            int conditionId = secilenler.first()->data(Qt::UserRole).toInt();
+
+            QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
+                                                                      "Bu kronik durum kaydini silmek istediginize emin misiniz?",
+                                                                      QMessageBox::Yes | QMessageBox::No);
+
+            if (cevap == QMessageBox::Yes) {
+                chroniccondition::remove(conditionId);
+                refreshChronicList();
+            }
+        }
+
 
