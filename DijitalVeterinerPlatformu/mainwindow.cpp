@@ -145,6 +145,7 @@ void MainWindow::on_btnHayvanEkle_clicked()
         item->setData(Qt::UserRole, p.id);
         ui->listWidgetHayvanlar->addItem(item);
     }
+    ui->listWidgetHayvanlar->setCurrentItem(nullptr);
 
     ui->comboBoxHayvan->clear();
     ui->comboBoxAsiHayvan->clear();
@@ -159,7 +160,6 @@ void MainWindow::on_btnHayvanEkle_clicked()
         ui->comboBoxBeslenmeHayvan->addItem(p.ad, p.id);
     }
 }
-
 
 
     void MainWindow::on_btnRandevuEkle_clicked()
@@ -449,55 +449,47 @@ void MainWindow::on_btnHayvanEkle_clicked()
 
         void MainWindow::on_btnSahipSil_clicked()
         {
-            QListWidgetItem *secili = ui->listWidgetSahipler->currentItem();
-            if (!secili) {
+            QList<QListWidgetItem*> secilenler = ui->listWidgetSahipler->selectedItems();
+            if (secilenler.isEmpty()) {
                 QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz sahibi listeden secin.");
                 return;
             }
 
-            int ownerId = secili->data(Qt::UserRole).toInt();
+            int ownerId = secilenler.first()->data(Qt::UserRole).toInt();
 
             QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
                                                                       "Bu sahibi silmek istediginize emin misiniz? Bagli tum hayvanlar ve kayitlari (randevu, asi, tedavi, kronik durum) da silinecek.",
                                                                       QMessageBox::Yes | QMessageBox::No);
 
             if (cevap == QMessageBox::Yes) {
-                // Once sahibin hayvanlarini bul
                 QList<pet> bagliHayvanlar = pet::getByOwner(ownerId);
 
                 for (const pet &p : bagliHayvanlar) {
-                    // Bu hayvana bagli randevulari sil
                     QList<appointment> hayvanRandevulari = appointment::getByPet(p.id);
                     for (const appointment &a : hayvanRandevulari) {
                         appointment::remove(a.id);
                     }
 
-                    // Bu hayvana bagli asilari sil
                     QList<vaccine> hayvanAsilari = vaccine::getByPet(p.id);
                     for (const vaccine &v : hayvanAsilari) {
                         vaccine::remove(v.id);
                     }
 
-                    // Bu hayvana bagli tedavileri sil
                     QList<treatment> hayvanTedavileri = treatment::getByPet(p.id);
                     for (const treatment &t : hayvanTedavileri) {
                         treatment::remove(t.id);
                     }
 
-                    // Bu hayvana bagli kronik durumlari sil
                     QList<chroniccondition> hayvanKronikleri = chroniccondition::getByPet(p.id);
                     for (const chroniccondition &c : hayvanKronikleri) {
                         chroniccondition::remove(c.id);
                     }
 
-                    // Hayvanin kendisini sil
                     pet::remove(p.id);
                 }
 
-                // En son sahibi sil
                 owner::remove(ownerId);
 
-                // Tum listeleri yenile
                 ui->listWidgetSahipler->clear();
                 QList<owner> owners = owner::getAll();
                 for (const owner &o : owners) {
@@ -527,7 +519,9 @@ void MainWindow::on_btnHayvanEkle_clicked()
 
                 ui->listWidgetHayvanlar->clear();
                 for (const pet &p : kalanHayvanlar) {
-                    ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
+                    QListWidgetItem *item = new QListWidgetItem(p.ad + " (" + p.tur + ")");
+                    item->setData(Qt::UserRole, p.id);
+                    ui->listWidgetHayvanlar->addItem(item);
                 }
 
                 refreshVaccineList();
@@ -538,13 +532,13 @@ void MainWindow::on_btnHayvanEkle_clicked()
 
         void MainWindow::on_btnHayvanSil_clicked()
         {
-            QListWidgetItem *secili = ui->listWidgetHayvanlar->currentItem();
-            if (!secili) {
+            QList<QListWidgetItem*> secilenler = ui->listWidgetHayvanlar->selectedItems();
+            if (secilenler.isEmpty()) {
                 QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz hayvani listeden secin.");
                 return;
             }
 
-            int petId = secili->data(Qt::UserRole).toInt();
+            int petId = secilenler.first()->data(Qt::UserRole).toInt();
 
             QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
                                                                       "Bu hayvani silmek istediginize emin misiniz? Bagli tum kayitlar (randevu, asi, tedavi, kronik durum) da silinecek.",
@@ -599,3 +593,4 @@ void MainWindow::on_btnHayvanEkle_clicked()
                 refreshReminders();
             }
         }
+
