@@ -104,6 +104,7 @@ void MainWindow::on_btnSahipEkle_clicked()
     ui->lineEditAd->clear();
     ui->lineEditTelefon->clear();
     ui->lineEditEmail->clear();
+
     ui->listWidgetSahipler->clear();
     QList<owner> owners = owner::getAll();
     for (const owner &o : owners) {
@@ -112,8 +113,12 @@ void MainWindow::on_btnSahipEkle_clicked()
         ui->listWidgetSahipler->addItem(item);
     }
 
+    // Sahip combo box'ini de guncelle
+    ui->comboBoxSahip->clear();
+    for (const owner &o : owners) {
+        ui->comboBoxSahip->addItem(o.ad, o.id);
+    }
 }
-
 
 void MainWindow::on_btnHayvanEkle_clicked()
 {
@@ -137,6 +142,20 @@ void MainWindow::on_btnHayvanEkle_clicked()
     QList<pet> pets = pet::getAll();
     for (const pet &p : pets) {
         ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
+    }
+
+    // Hayvan icin kullanilan tum combo box'lari guncelle
+    ui->comboBoxHayvan->clear();
+    ui->comboBoxAsiHayvan->clear();
+    ui->comboBoxTedaviHayvan->clear();
+    ui->comboBoxKronikHayvan->clear();
+    ui->comboBoxBeslenmeHayvan->clear();
+    for (const pet &p : pets) {
+        ui->comboBoxHayvan->addItem(p.ad, p.id);
+        ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
+        ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
+        ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
+        ui->comboBoxBeslenmeHayvan->addItem(p.ad, p.id);
     }
 }
 
@@ -427,7 +446,6 @@ void MainWindow::on_btnHayvanEkle_clicked()
             ui->labelBeslenmeOnerisi->setText(oneri);
         }
 
-
         void MainWindow::on_btnSahipSil_clicked()
         {
             QListWidgetItem *secili = ui->listWidgetSahipler->currentItem();
@@ -439,12 +457,46 @@ void MainWindow::on_btnHayvanEkle_clicked()
             int ownerId = secili->data(Qt::UserRole).toInt();
 
             QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
-                                                                      "Bu sahibi silmek istediginize emin misiniz? Bagli hayvanlar da etkilenebilir.",
+                                                                      "Bu sahibi silmek istediginize emin misiniz? Bagli tum hayvanlar ve kayitlari (randevu, asi, tedavi, kronik durum) da silinecek.",
                                                                       QMessageBox::Yes | QMessageBox::No);
 
             if (cevap == QMessageBox::Yes) {
+                // Once sahibin hayvanlarini bul
+                QList<pet> bagliHayvanlar = pet::getByOwner(ownerId);
+
+                for (const pet &p : bagliHayvanlar) {
+                    // Bu hayvana bagli randevulari sil
+                    QList<appointment> hayvanRandevulari = appointment::getByPet(p.id);
+                    for (const appointment &a : hayvanRandevulari) {
+                        appointment::remove(a.id);
+                    }
+
+                    // Bu hayvana bagli asilari sil
+                    QList<vaccine> hayvanAsilari = vaccine::getByPet(p.id);
+                    for (const vaccine &v : hayvanAsilari) {
+                        vaccine::remove(v.id);
+                    }
+
+                    // Bu hayvana bagli tedavileri sil
+                    QList<treatment> hayvanTedavileri = treatment::getByPet(p.id);
+                    for (const treatment &t : hayvanTedavileri) {
+                        treatment::remove(t.id);
+                    }
+
+                    // Bu hayvana bagli kronik durumlari sil
+                    QList<chroniccondition> hayvanKronikleri = chroniccondition::getByPet(p.id);
+                    for (const chroniccondition &c : hayvanKronikleri) {
+                        chroniccondition::remove(c.id);
+                    }
+
+                    // Hayvanin kendisini sil
+                    pet::remove(p.id);
+                }
+
+                // En son sahibi sil
                 owner::remove(ownerId);
 
+                // Tum listeleri yenile
                 ui->listWidgetSahipler->clear();
                 QList<owner> owners = owner::getAll();
                 for (const owner &o : owners) {
@@ -452,7 +504,33 @@ void MainWindow::on_btnHayvanEkle_clicked()
                     item->setData(Qt::UserRole, o.id);
                     ui->listWidgetSahipler->addItem(item);
                 }
+
+                ui->comboBoxSahip->clear();
+                for (const owner &o : owners) {
+                    ui->comboBoxSahip->addItem(o.ad, o.id);
+                }
+
+                ui->comboBoxHayvan->clear();
+                ui->comboBoxAsiHayvan->clear();
+                ui->comboBoxTedaviHayvan->clear();
+                ui->comboBoxKronikHayvan->clear();
+                ui->comboBoxBeslenmeHayvan->clear();
+                QList<pet> kalanHayvanlar = pet::getAll();
+                for (const pet &p : kalanHayvanlar) {
+                    ui->comboBoxHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxBeslenmeHayvan->addItem(p.ad, p.id);
+                }
+
+                ui->listWidgetHayvanlar->clear();
+                for (const pet &p : kalanHayvanlar) {
+                    ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
+                }
+
+                refreshVaccineList();
+                refreshChronicList();
+                refreshReminders();
             }
         }
-
-
