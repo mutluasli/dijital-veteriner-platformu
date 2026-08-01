@@ -141,10 +141,11 @@ void MainWindow::on_btnHayvanEkle_clicked()
     ui->listWidgetHayvanlar->clear();
     QList<pet> pets = pet::getAll();
     for (const pet &p : pets) {
-        ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
+        QListWidgetItem *item = new QListWidgetItem(p.ad + " (" + p.tur + ")");
+        item->setData(Qt::UserRole, p.id);
+        ui->listWidgetHayvanlar->addItem(item);
     }
 
-    // Hayvan icin kullanilan tum combo box'lari guncelle
     ui->comboBoxHayvan->clear();
     ui->comboBoxAsiHayvan->clear();
     ui->comboBoxTedaviHayvan->clear();
@@ -527,6 +528,70 @@ void MainWindow::on_btnHayvanEkle_clicked()
                 ui->listWidgetHayvanlar->clear();
                 for (const pet &p : kalanHayvanlar) {
                     ui->listWidgetHayvanlar->addItem(p.ad + " (" + p.tur + ")");
+                }
+
+                refreshVaccineList();
+                refreshChronicList();
+                refreshReminders();
+            }
+        }
+
+        void MainWindow::on_btnHayvanSil_clicked()
+        {
+            QListWidgetItem *secili = ui->listWidgetHayvanlar->currentItem();
+            if (!secili) {
+                QMessageBox::information(this, "Bilgi", "Lutfen silmek istediginiz hayvani listeden secin.");
+                return;
+            }
+
+            int petId = secili->data(Qt::UserRole).toInt();
+
+            QMessageBox::StandardButton cevap = QMessageBox::question(this, "Onay",
+                                                                      "Bu hayvani silmek istediginize emin misiniz? Bagli tum kayitlar (randevu, asi, tedavi, kronik durum) da silinecek.",
+                                                                      QMessageBox::Yes | QMessageBox::No);
+
+            if (cevap == QMessageBox::Yes) {
+                QList<appointment> randevular = appointment::getByPet(petId);
+                for (const appointment &a : randevular) {
+                    appointment::remove(a.id);
+                }
+
+                QList<vaccine> asilar = vaccine::getByPet(petId);
+                for (const vaccine &v : asilar) {
+                    vaccine::remove(v.id);
+                }
+
+                QList<treatment> tedaviler = treatment::getByPet(petId);
+                for (const treatment &t : tedaviler) {
+                    treatment::remove(t.id);
+                }
+
+                QList<chroniccondition> kronikler = chroniccondition::getByPet(petId);
+                for (const chroniccondition &c : kronikler) {
+                    chroniccondition::remove(c.id);
+                }
+
+                pet::remove(petId);
+
+                ui->listWidgetHayvanlar->clear();
+                QList<pet> pets = pet::getAll();
+                for (const pet &p : pets) {
+                    QListWidgetItem *item = new QListWidgetItem(p.ad + " (" + p.tur + ")");
+                    item->setData(Qt::UserRole, p.id);
+                    ui->listWidgetHayvanlar->addItem(item);
+                }
+
+                ui->comboBoxHayvan->clear();
+                ui->comboBoxAsiHayvan->clear();
+                ui->comboBoxTedaviHayvan->clear();
+                ui->comboBoxKronikHayvan->clear();
+                ui->comboBoxBeslenmeHayvan->clear();
+                for (const pet &p : pets) {
+                    ui->comboBoxHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxAsiHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxTedaviHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxKronikHayvan->addItem(p.ad, p.id);
+                    ui->comboBoxBeslenmeHayvan->addItem(p.ad, p.id);
                 }
 
                 refreshVaccineList();
